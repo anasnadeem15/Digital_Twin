@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNC Power Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>CNC Power Prediction</h1>
+        <form action="/predict" method="POST">
+            <label for="feed_rate">Feed Rate (mm/rev):</label>
+            <input type="number" step="0.01" name="feed_rate" required>
+
+            <label for="depth_of_cut">Depth of Cut (mm):</label>
+            <input type="number" step="0.01" name="depth_of_cut" required>
+
+            <label for="spindle_speed">Spindle Speed (RPM):</label>
+            <input type="number" step="1" name="spindle_speed" required>
+
+            <button type="submit">Predict</button>
+        </form>
+
+        {% if power_prediction %}
+        <div class="result">
+            <h2>Prediction Results:</h2>
+            <p><strong>Power Consumption:</strong> {{ power_prediction | round(2) }} watts</p>
+            <p><strong>Power Source:</strong> {{ power_source }}</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
