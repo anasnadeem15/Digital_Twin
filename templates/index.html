@@ -9,6 +9,8 @@
 <body>
     <div class="container">
         <h1>CNC Power Prediction</h1>
+        
+        <!-- Manual Input Form -->
         <form action="/predict" method="POST">
             <label for="feed_rate">Feed Rate (mm/rev):</label>
             <input type="number" step="0.01" name="feed_rate" required>
@@ -22,13 +24,47 @@
             <button type="submit">Predict</button>
         </form>
 
-        {% if power_prediction %}
+        <!-- G-code Upload Section -->
+        <h2>Upload G-code from Mach3</h2>
+        <input type="file" id="gcode-file" accept=".nc,.txt">
+        <button onclick="uploadGcode()">Upload G-code</button>
+
+        <!-- Results Section -->
         <div class="result">
             <h2>Prediction Results:</h2>
-            <p><strong>Power Consumption:</strong> {{ power_prediction | round(2) }} watts</p>
-            <p><strong>Power Source:</strong> {{ power_source }}</p>
+            <p><strong>Power Consumption:</strong> <span id="power_prediction">{{ power_prediction | round(2) if power_prediction else '' }}</span> watts</p>
+            <p><strong>Power Source:</strong> <span id="power_source">{{ power_source if power_source else '' }}</span></p>
         </div>
-        {% endif %}
     </div>
+
+    <!-- JavaScript for G-code Upload -->
+    <script>
+        // Function to upload G-code
+        function uploadGcode() {
+            const fileInput = document.getElementById('gcode-file');
+            const file = fileInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const gcode = e.target.result;
+                    fetch('/process_gcode', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ gcode: gcode })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update the results section
+                        document.getElementById('power_prediction').innerText = data.power_consumption;
+                        document.getElementById('power_source').innerText = data.power_source;
+                    });
+                };
+                reader.readAsText(file);
+            } else {
+                alert("Please select a G-code file.");
+            }
+        }
+    </script>
 </body>
 </html>
