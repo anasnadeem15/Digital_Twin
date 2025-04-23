@@ -1,46 +1,54 @@
+# mach3_monitor.py (Updated)
 import os
 import time
 import requests
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
-# Path to Mach3's G-code directory (update this path!)
-MACH3_GCODE_DIR = r"C:\Mach3\Gcode"  # Use raw string to avoid issues with backslashes
-
-# URL of your web app's G-code processing endpoint
-WEB_APP_URL = "http://127.0.0.1:5000/process_gcode"  # Local Flask app URL
-
-def upload_gcode(file_path):
-    """
-    Uploads a G-code file to the web app for processing.
-    """
-    try:
-        with open(file_path, 'r') as file:
-            gcode = file.read()
-            print(f"Uploading file: {file_path}")
-            response = requests.post(WEB_APP_URL, json={"gcode": gcode})
+class GCodeHandler(FileSystemEventHandler):
+    def __init__(self, api_url):
+        self.api_url = api_url
+        self.processed_files = set()
+    
+    def on_created(self, event):
+        if not event.is_directory and event.src_path.lower().endswith(('.nc', '.txt', '.gcode')):
+            self.process_file(event.src_path)
+    
+    def process_file(self, path):
+        try:
+            if path in self.processed_files:
+                return
+            
+            with open(path, 'rb') as f:
+                response = requests.post(
+                    f"{self.api_url}/upload",
+                    files={'file': (os.path.basename(path), f)}
+                )
             
             if response.status_code == 200:
-                print(f"Processed: {file_path}")
-                print(f"Response: {response.json()}")
+                self.processed_files.add(path)
+                print(f"Processed {path} successfully")
             else:
-                print(f"Failed to process: {file_path}. Status code: {response.status_code}")
-                print(f"Response: {response.text}")  # Debug: Print the server's response
-    except Exception as e:
-        print(f"Error processing {file_path}: {e}")
+                print(f"Error processing {path}: {response.text}")
+        
+        except Exception as e:
+            print(f"Failed to process {path}: {str(e)}")
 
-def monitor_directory():
-    """
-    Monitors the Mach3 G-code directory for new files.
-    """
-    print("Monitoring Mach3 G-code directory...")
-    processed_files = set()  # Track processed files to avoid duplicates
-
-    while True:
-        for filename in os.listdir(MACH3_GCODE_DIR):
-            if filename.endswith((".nc", ".txt")) and filename not in processed_files:
-                file_path = os.path.join(MACH3_GCODE_DIR, filename)
-                upload_gcode(file_path)
-                processed_files.add(filename)  # Mark file as processed
-        time.sleep(5)  # Check the directory every 5 seconds
+def start_monitoring(directory, api_url):
+    event_handler = GCodeHandler(api_url)
+    observer = Observer()
+    observer.schedule(event_handler, directory, recursive=True)
+    observer.start()
+    
+    try:
+        while True:
+            time.sleep(5)
+    except KeyboardInterrupt:
+        observer.stop()
+    observer.join()
 
 if __name__ == "__main__":
-    monitor_directory()
+    start_monitoring(
+        directory="C:\\Mach3\\GCode",
+        api_url="http://localhost:5000"
+    )

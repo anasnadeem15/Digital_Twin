@@ -1,0 +1,50 @@
+%
+O1000 (Turning Operation for Cylindrical Workpiece)
+G21 (Set Units to mm)
+G18 (Select ZX Plane)
+G90 (Absolute Positioning)
+G40 (Cancel Tool Radius Compensation)
+G80 (Cancel Canned Cycles)
+
+(Define Cutting Parameters)
+S1066 M03 (Set Spindle Speed to 1066 RPM, Clockwise)
+G99 (Feed Per Revolution Mode)
+T0101 (Select Tool 1, Offset 1)
+
+(Approach Position)
+G00 X52.0 Z2.0 (Rapid Move to Safe Position)
+
+(First Pass)
+G01 X48.94 Z0 F0.54 (Cutting to reduce diameter by 1.06mm)
+G01 Z-100.0 (Move Along Z-Axis)
+G00 X52.0 Z2.0 (Retract to Safe Position)
+
+(Second Pass)
+G01 X46.82 Z0 F0.54 (Next Depth of Cut, 1.06mm More)
+G01 Z-100.0
+G00 X52.0 Z2.0
+
+(Third Pass)
+G01 X44.7 Z0 F0.54
+G01 Z-100.0
+G00 X52.0 Z2.0
+
+(Fourth Pass)
+G01 X42.58 Z0 F0.54
+G01 Z-100.0
+G00 X52.0 Z2.0
+
+(Fifth Pass)
+G01 X40.46 Z0 F0.54
+G01 Z-100.0
+G00 X52.0 Z2.0
+
+(Finishing Pass)
+G01 X40.0 Z0 F0.54 (Final Diameter Achieved)
+G01 Z-100.0
+G00 X52.0 Z2.0
+
+G28 U0 W0 (Return to Home)
+M05 (Spindle Stop)
+M30 (End of Program)
+%
